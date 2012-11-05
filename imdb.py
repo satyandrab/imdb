@@ -2,6 +2,7 @@
 import mechanize
 import cookielib
 from lxml import html
+import re
 global count
 count = 0
 
@@ -31,8 +32,12 @@ br.set_handle_refresh(mechanize._http.HTTPRefreshProcessor(), max_time=1)
 # User-Agent (this is cheating, ok?)
 br.addheaders = [('User-agent', 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.1) Gecko/2008071615 Fedora/3.0.1-1.fc9 Firefox/3.0.1')]
 
-data_writer = csv.writer(open("imdb v1.0.csv", "wb"))
-data_writer.writerow(['URL', 'Title', 'year', 'Release date', 'Genres', 'Language', 'Country', 'Main image', 'Duration', 'Rating', 'Director', 'Stars', 'Short Description', 'Story line', 'Budget', 'Opening Weekend', 'Gross','Production Company','Runtime','SoundMix', 'Color', 'Aspect Ration', 'Official Sites', 'Also Known As', 'Filming Location' ,'Writers', 'TagLines', 'Plot Keywords'])
+data_writer = csv.writer(open("imdb v3.0.csv", "wb"))
+data_writer.writerow(['URL', 'Title', 'year', 'Release date', 'Official Sites', 'box office/business', 'Genres', 'Language', 'Country', 'Main image', 'Duration', 'Rating',
+                      'Director', 'Stars', 'Short Description', 'Plot Summary', 'synopsis', 'Parents Guide', 'Connections', 
+                      'Sound Tracks', 'Budget', 'Opening Weekend', 'Gross','Production Company',
+                      'Runtime','SoundMix', 'Color', 'Aspect Ration', 'Official Sites', 'Also Known As', 'Filming Location' ,'Technical Specs',
+                       'Writers', 'TagLines', 'Plot Keywords', 'Literature', 'Trailers and Videos', 'Awards'])
 
 def getMovieURL(url):
     print url
@@ -82,11 +87,50 @@ def imdb(url):
 #        raise
         data_list.append("")
         
-    """ release date """
+    """ release dates """
     try:
-        release_date = parsed_source.xpath("//time[@itemprop='datePublished']/text()")
-        print release_date
-        data_list.append("".join(release_date).strip())
+        release_dates_url = url+'releaseinfo'
+        release_dates_html_response = br.open(release_dates_url)
+        release_dates_html_source = release_dates_html_response.read()
+        release_dates_result = release_dates_html_source.replace('\n', '').replace('\r', '')
+        release_dates_parsed_source = html.fromstring(release_dates_result, release_dates_url)
+        release_dates_parsed_source.make_links_absolute()
+        
+        release_dates_re = re.compile('<table border="0" cellpadding="2">(.*?)</table')
+        release_dates = release_dates_re.findall(str(release_dates_result))
+        data_list.append(" ".join(release_dates).strip())
+    except:
+#        raise
+        data_list.append("")
+        
+    """ official sites """
+    try:
+        official_sites_url = url+'officialsites'
+        officialsites_html_response = br.open(official_sites_url)
+        officialsites_html_source = officialsites_html_response.read()
+        officialsites_result = officialsites_html_source.replace('\n', '').replace('\r', '')
+        officialsites_parsed_source = html.fromstring(officialsites_result, official_sites_url)
+        officialsites_parsed_source.make_links_absolute()
+        
+        release_dates_re = re.compile('<ol>(.*?)</ol')
+        release_dates = release_dates_re.findall(str(officialsites_result))
+        data_list.append(" ".join(release_dates).strip())
+    except:
+#        raise
+        data_list.append("")
+        
+    """ box office/business """
+    try:
+        business_url = url+'business'
+        business_html_response = br.open(business_url)
+        business_html_source = business_html_response.read()
+        business_result = business_html_source.replace('\n', '').replace('\r', '')
+        business_parsed_source = html.fromstring(business_result, business_url)
+        business_parsed_source.make_links_absolute()
+        
+        business_re = re.compile('<div id="tn15content">(.*?)<h5>Copyright Holder</h5>')
+        business = business_re.findall(str(business_result))
+        data_list.append(" ".join(business).strip())
     except:
 #        raise
         data_list.append("")
@@ -174,9 +218,81 @@ def imdb(url):
     
     """ story line """
     try:
-        story_line = parsed_source.xpath("//div[@class='article']/p/text()")
-        print story_line
-        data_list.append(", ".join(story_line).strip())
+        print '*'*78
+        story_line_url = url+'plotsummary'
+        story_line_html_response = br.open(story_line_url)
+        story_line_html_source = story_line_html_response.read()
+        story_line_result = story_line_html_source.replace('\n', '').replace('\r', '')
+        story_line_parsed_source = html.fromstring(story_line_result, story_line_url)
+        story_line_parsed_source.make_links_absolute()
+        
+        plot_summary_re = re.compile('<p class="plotpar">(.*?)</p>')
+        plot_summary = plot_summary_re.findall(str(story_line_result))
+        data_list.append(" ".join(plot_summary).strip())
+    except:
+#        raise
+        data_list.append("")
+        
+    """ synopsis """
+    try:
+        synopsis_url = url+'synopsis'
+        synopsis_html_response = br.open(synopsis_url)
+        synopsis_html_source = synopsis_html_response.read()
+        synopsis_result = synopsis_html_source.replace('\n', '').replace('\r', '')
+        synopsis_parsed_source = html.fromstring(synopsis_result, synopsis_url)
+        synopsis_parsed_source.make_links_absolute()
+        
+        synopsis_re = re.compile('<div id="swiki.2.1">(.*?)</div>')
+        synopsis = synopsis_re.findall(str(synopsis_result))
+        data_list.append(" ".join(synopsis).strip())
+    except:
+#        raise
+        data_list.append("")
+        
+    """ parentalguide """
+    try:
+        parentalguide_url = url+'parentalguide'
+        parentalguide_html_response = br.open(parentalguide_url)
+        parentalguide_html_source = parentalguide_html_response.read()
+        parentalguide_result = parentalguide_html_source.replace('\n', '').replace('\r', '')
+        parentalguide_parsed_source = html.fromstring(parentalguide_result, parentalguide_url)
+        parentalguide_parsed_source.make_links_absolute()
+        
+        parentalguide_re = re.compile('<div id="swiki_body">(.*?)<div id="swiki_control2')
+        parentalguide = parentalguide_re.findall(str(parentalguide_result))
+        data_list.append(" ".join(parentalguide).strip())
+    except:
+#        raise
+        data_list.append("")
+
+    """ Connections """
+    try:
+        Connections_url = url+'trivia?tab=mc'
+        Connections_html_response = br.open(Connections_url)
+        Connections_html_source = Connections_html_response.read()
+        Connections_result = Connections_html_source.replace('\n', '').replace('\r', '')
+        Connections_parsed_source = html.fromstring(Connections_result, Connections_url)
+        Connections_parsed_source.make_links_absolute()
+        
+        Connections_re = re.compile('<div id="main">(.*?)<script type="text/javascript">')
+        Connections = Connections_re.findall(str(Connections_result))
+        data_list.append(" ".join(Connections).strip())
+    except:
+#        raise
+        data_list.append("")
+
+    """ soundtracks """
+    try:
+        soundtrack_url = url+'soundtrack'
+        soundtracks_html_response = br.open(soundtrack_url)
+        soundtracks_html_source = soundtracks_html_response.read()
+        soundtracks_result = soundtracks_html_source.replace('\n', '').replace('\r', '')
+        soundtracks_parsed_source = html.fromstring(soundtracks_result, soundtrack_url)
+        soundtracks_parsed_source.make_links_absolute()
+        
+        soundtrack_re = re.compile('<ul class="trivia">(.*?)</ul>')
+        soundtrack = soundtrack_re.findall(str(soundtracks_result))
+        data_list.append(" ".join(soundtrack).strip())
     except:
 #        raise
         data_list.append("")
@@ -269,16 +385,39 @@ def imdb(url):
     try:
         also_known_as = parsed_source.xpath("//div[h4[contains(text(),'Also Known As:')]]/text()[1]")
         print also_known_as
-        data_list.append(", ".join(also_known_as).strip())
+        data_list.append(", ".join(also_known_as).strip().encode())
     except:
 #        raise
         data_list.append("")
         
     """ Filming Location """
     try:
-        filming_location = parsed_source.xpath("//div[h4[contains(text(),'Filming Locations:')]]/a/text()")
-        print filming_location
-        data_list.append(", ".join(filming_location).strip())
+        locations_url = url+'locations'
+        locations_html_response = br.open(locations_url)
+        locations_html_source = locations_html_response.read()
+        locations_result = locations_html_source.replace('\n', '').replace('\r', '')
+        locations_parsed_source = html.fromstring(locations_result, locations_url)
+        locations_parsed_source.make_links_absolute()
+        
+        locations_re = re.compile('<dl>(.*?)</dl>')
+        locations = locations_re.findall(str(locations_result))
+        data_list.append(" ".join(locations).strip())
+    except:
+#        raise
+        data_list.append("")
+        
+    """ Technical Specs  """
+    try:
+        technical_url = url+'technical'
+        technical_html_response = br.open(technical_url)
+        technical_html_source = technical_html_response.read()
+        technical_result = technical_html_source.replace('\n', '').replace('\r', '')
+        technical_parsed_source = html.fromstring(technical_result, technical_url)
+        technical_parsed_source.make_links_absolute()
+        
+        technical_re = re.compile('<div id="tn15content">.*?<h5>(.*?)<h3>Related Links</h3>')
+        technical = technical_re.findall(str(technical_result))
+        data_list.append(" ".join(technical).strip())
     except:
 #        raise
         data_list.append("")
@@ -310,21 +449,76 @@ def imdb(url):
 #        raise
         data_list.append("")
         
+    """ literature  """
+    try:
+        literature_url = url+'literature'
+        literature_html_response = br.open(literature_url)
+        literature_html_source = literature_html_response.read()
+        literature_result = literature_html_source.replace('\n', '').replace('\r', '')
+        literature_parsed_source = html.fromstring(literature_result, literature_url)
+        literature_parsed_source.make_links_absolute()
+        
+        literature_re = re.compile('<div id="tn15content">.*?<h5>(.*?)<div id="tn15bot">')
+        literature = literature_re.findall(str(literature_result))
+        data_list.append(" ".join(literature).strip())
+    except:
+#        raise
+        data_list.append("")
+        
+    """ trailers and videos  """
+    try:
+        videogallery_url = url+'videogallery'
+        videogallery_html_response = br.open(videogallery_url)
+        videogallery_html_source = videogallery_html_response.read()
+        videogallery_result = videogallery_html_source.replace('\n', '').replace('\r', '')
+        videogallery_parsed_source = html.fromstring(videogallery_result, videogallery_url)
+        videogallery_parsed_source.make_links_absolute()
+        
+        videogallery = videogallery_parsed_source.xpath("//div[@class='slate']/a/@href")
+        data_list.append(", ".join(videogallery).strip())
+    except:
+#        raise
+        data_list.append("")
+
+    """ Awards  """
+    try:
+        awards_url = url+'awards'
+        awards_html_response = br.open(awards_url)
+        awards_html_source = awards_html_response.read()
+        awards_result = awards_html_source.replace('\n', '').replace('\r', '')
+        awards_parsed_source = html.fromstring(awards_result, awards_url)
+        awards_parsed_source.make_links_absolute()
+        
+        awards_re = re.compile('<div id="tn15content">.*?<table.*?>(.*?)<h3>Related Links</h3>')
+        awards = awards_re.findall(str(awards_result))
+        data_list.append(" ".join(awards).strip())
+    except:
+#        raise
+        data_list.append("")
+
         
     print '+'*78
-    try:
-        if item_name:
-            data_writer.writerow(data_list)
-            print data_list
-    except:
-        pass
+    #try:
+    temp_list = []
+    for data_point in data_list:
+        data = data_point.encode('utf-8')
+        temp_list.append(data)
+    
+    if item_name:
+        data_writer.writerow(temp_list)
+        print temp_list
+    #except:
+    #    pass
     print '+'*78
 
 if __name__ == '__main__':
-    #url = 'http://www.imdb.com/title/tt0172495/'
-    #imdb(url)
+    url = 'http://www.imdb.com/title/tt0181984'
+    imdb(url)
+
+#    url = 'http://www.imdb.com/search/title?sort=moviemeter,asc&start=101&title_type=feature&year=2000,2000'
+#    getMovieURL(url)
     
-    for i in range(1, 3600, 50):
-        print i
-        url = 'http://www.imdb.com/search/title?sort=moviemeter,asc&start='+str(i)+'&title_type=feature&year=2000,2000'
-        getMovieURL(url)
+#    for i in range(1, 3600, 50):
+#        print i
+#        url = 'http://www.imdb.com/search/title?sort=moviemeter,asc&start='+str(i)+'&title_type=feature&year=2000,2000'
+#        getMovieURL(url)
